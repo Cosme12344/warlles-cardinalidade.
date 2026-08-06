@@ -1,1 +1,173 @@
+import sqlite3
+import customtkinter as ctk
+from tkinter import messagebox
 
+# Configuração de tema do CustomTkinter
+ctk.set_appearance_mode("Dark")
+ctk.set_default_color_theme("green")
+
+# --- 1. CONFIGURAÇÃO DO BANCO DE DADOS (SQL) ---
+def conectar_bd():
+    conexao = sqlite3.connect('biblioteca.db')
+    cursor = conexao.cursor()
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS livros (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            titulo TEXT NOT NULL,
+            categoria TEXT NOT NULL,
+            ano INTEGER NOT NULL,
+            status TEXT NOT NULL
+        )
+    ''')
+    conexao.commit()
+    conexao.close()
+
+
+def cadastrar_livro():
+    titulo = entry_titulo.get()
+    categoria = combo_categoria.get()
+    ano = entry_ano.get()
+    status = combo_status.get()
+
+    if not titulo or not ano:
+        messagebox.showwarning("Aviso", "Preencha o Título e o Ano de Publicação!")
+        return
+
+    try:
+        ano_num = int(ano)
+        if ano_num < 1000 or ano_num > 2100:
+            messagebox.showwarning(
+                "Aviso",
+                "Informe um ano de publicação válido!"
+            )
+            return
+    except ValueError:
+        messagebox.showwarning(
+            "Aviso",
+            "O Ano de Publicação deve ser um número inteiro!"
+        )
+        return
+
+    conexao = sqlite3.connect('biblioteca.db')
+    cursor = conexao.cursor()
+
+    cursor.execute("""
+        INSERT INTO livros (titulo, categoria, ano, status)
+        VALUES (?, ?, ?, ?)
+    """, (titulo, categoria, ano_num, status))
+
+    conexao.commit()
+    conexao.close()
+
+    messagebox.showinfo(
+        "Sucesso",
+        f"📚 '{titulo}' foi adicionado ao acervo com sucesso!"
+    )
+
+    entry_titulo.delete(0, "end")
+    entry_ano.delete(0, "end")
+
+
+# --- 2. INTERFACE GRÁFICA ---
+conectar_bd()
+
+app = ctk.CTk()
+app.title("📚 Sistema de Gerenciamento de Biblioteca")
+app.geometry("400x520")
+app.resizable(False, False)
+
+# Título
+label_titulo = ctk.CTkLabel(
+    app,
+    text="Cadastro de Livros",
+    font=("Arial", 22, "bold")
+)
+label_titulo.pack(pady=20)
+
+# Campo: Título
+label_nome = ctk.CTkLabel(
+    app,
+    text="Título do Livro:",
+    font=("Arial", 12)
+)
+label_nome.pack(anchor="w", padx=40)
+
+entry_titulo = ctk.CTkEntry(
+    app,
+    placeholder_text="Ex: Dom Casmurro",
+    width=320
+)
+entry_titulo.pack(pady=(0, 15))
+
+# Campo: Categoria
+label_categoria = ctk.CTkLabel(
+    app,
+    text="Categoria:",
+    font=("Arial", 12)
+)
+label_categoria.pack(anchor="w", padx=40)
+
+combo_categoria = ctk.CTkOptionMenu(
+    app,
+    values=[
+        "Romance",
+        "Fantasia",
+        "Ficção Científica",
+        "Suspense",
+        "Biografia",
+        "Didático",
+        "Outros"
+    ],
+    width=320
+)
+combo_categoria.pack(pady=(0, 15))
+
+# Campo: Ano
+label_ano = ctk.CTkLabel(
+    app,
+    text="Ano de Publicação:",
+    font=("Arial", 12)
+)
+label_ano.pack(anchor="w", padx=40)
+
+entry_ano = ctk.CTkEntry(
+    app,
+    placeholder_text="Ex: 2021",
+    width=320
+)
+entry_ano.pack(pady=(0, 15))
+
+# Campo: Status
+label_status = ctk.CTkLabel(
+    app,
+    text="Situação:",
+    font=("Arial", 12)
+)
+label_status.pack(anchor="w", padx=40)
+
+combo_status = ctk.CTkOptionMenu(
+    app,
+    values=[
+        "Disponível",
+        "Emprestado",
+        "Reservado",
+        "Em manutenção"
+    ],
+    width=320
+)
+combo_status.pack(pady=(0, 25))
+
+# Botão
+btn_salvar = ctk.CTkButton(
+    app,
+    text="Cadastrar Livro",
+    command=cadastrar_livro,
+    fg_color="#2E8B57",
+    hover_color="#1F5F3C",
+    font=("Arial", 13, "bold"),
+    height=40,
+    width=320
+)
+btn_salvar.pack()
+
+app.mainloop()
